@@ -2,6 +2,8 @@
 
 This Chrome extension calculates the total savings from monthly savings data found on the Harness Recommendations page and displays it.
 
+<img width="1930" height="732" alt="image" src="https://github.com/user-attachments/assets/e90095a6-31b5-434a-8636-82b37af1cf3b" />
+
 ## How to Install
 
 1.  Open Chrome and navigate to `chrome://extensions`.
