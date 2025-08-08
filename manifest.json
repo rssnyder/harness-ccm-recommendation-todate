@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Harness Recommendations Tracker",
+  "name": "harness-ccm-recommendation-todate",
   "version": "1.0",
   "description": "Calculates total savings from monthly savings data from Harness Recommendations",
   "permissions": ["activeTab", "scripting"],
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": ["https://*.harness.io/ng/account/*/all/ce/recommendations"],
       "js": ["content.js"]
     }
   ]

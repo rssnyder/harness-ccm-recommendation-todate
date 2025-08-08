@@ -18,46 +18,40 @@ function displayErrorOnPage(message) {
 
 function calculateAndDisplayTotalSavings() {
   try {
+    // Check if the key element with the text "Savings Realized" exists.
+    const savingsRealizedElement = Array.from(document.querySelectorAll('p')).find(p => p.textContent.trim() === 'Savings Realized');
+    if (!savingsRealizedElement) {
+      return; // If it doesn't exist, this isn't the right page. Stop.
+    }
+
     const recommendationElements = document.querySelectorAll('.TableV2--row');
     if (recommendationElements.length === 0) {
-      console.error('Savings Tracker: No recommendation elements found with selector ".TableV2--body".');
-      return;
+      return; // No recommendations found, do nothing.
     }
+
+    let grandTotalSavings = 0;
 
     recommendationElements.forEach((element, index) => {
       const cells = element.querySelectorAll('div[role="cell"]');
 
-      // The savings amount is in the 2nd cell of the row.
       const savingsCell = cells.length > 1 ? cells[1] : null;
       const monthlySavingsElement = savingsCell ? savingsCell.querySelector('.StyledProps--font-variation-h5') : null;
 
-      // Find the cell with the recommendation type image, then get the next cell, which has the date.
-      const recommendationTypeCell = element.querySelector('img[src*="data:image/svg+xml"]')?.closest('div[role="cell"]');
-      const dateCell = recommendationTypeCell ? recommendationTypeCell.nextElementSibling : null;
+      const dateCell = cells.length > 3 ? cells[3] : null;
       const appliedDateElement = dateCell ? dateCell.querySelector('p') : null;
 
-      if (!monthlySavingsElement) {
-        console.error(`Savings Tracker (item ${index}): Could not find monthly savings element.`);
-        return;
-      }
-      if (!appliedDateElement) {
-        console.error(`Savings Tracker (item ${index}): Could not find applied date element.`);
-        return;
+      if (!monthlySavingsElement || !appliedDateElement) {
+        return; // Skip if we can't find the required elements
       }
 
       const monthlySavingsText = monthlySavingsElement.textContent;
       const appliedDateText = appliedDateElement.textContent;
 
       const monthlySavings = parseFloat(monthlySavingsText.replace(/[^0-9.]/g, ''));
-      if (isNaN(monthlySavings)) {
-        console.error(`Savings Tracker (item ${index}): Could not parse monthly savings from "${monthlySavingsText}".`);
-        return;
-      }
-
       const appliedDate = new Date(appliedDateText);
-      if (isNaN(appliedDate.getTime())) {
-        console.error(`Savings Tracker (item ${index}): Could not parse date from "${appliedDateText}".`);
-        return;
+
+      if (isNaN(monthlySavings) || isNaN(appliedDate.getTime())) {
+        return; // Skip if data is not valid
       }
 
       const today = new Date();
@@ -66,29 +60,57 @@ function calculateAndDisplayTotalSavings() {
       const dailySavings = monthlySavings / 30;
       const totalSavings = dailySavings * daysPassed;
 
-      // Avoid adding duplicate displays
-      if (element.querySelector('.total-savings-display')) return;
+      grandTotalSavings += totalSavings;
 
-      const totalSavingsElement = document.createElement('div');
-      totalSavingsElement.className = 'total-savings-display';
-      totalSavingsElement.style.color = 'green';
-      totalSavingsElement.style.fontWeight = 'bold';
-      totalSavingsElement.textContent = `Total Savings To Date: $${totalSavings.toFixed(2)}`;
-
-      // Append the new element to the savings cell to place it below the monthly savings.
-      if (savingsCell) {
+      // Update individual row display
+      let totalSavingsElement = savingsCell.querySelector('.total-savings-display');
+      if (!totalSavingsElement) {
+        totalSavingsElement = document.createElement('div');
+        totalSavingsElement.className = 'total-savings-display';
+        totalSavingsElement.style.color = 'green';
+        totalSavingsElement.style.fontWeight = 'bold';
         savingsCell.appendChild(totalSavingsElement);
       }
+      totalSavingsElement.textContent = `Total Savings To Date: $${totalSavings.toFixed(2)}`;
     });
+
+    // Update the grand total in the impact card
+    const impactCardContainer = document.querySelector('.ccmui_RecommendationCards-module_cardCtn_ptkiGu .Layout--vertical');
+    if (impactCardContainer) {
+      let grandTotalElement = impactCardContainer.querySelector('.custom-grand-total');
+      if (!grandTotalElement) {
+        grandTotalElement = document.createElement('p');
+        grandTotalElement.className = 'custom-grand-total';
+        grandTotalElement.style.marginTop = '10px';
+        grandTotalElement.style.fontWeight = 'bold';
+        impactCardContainer.appendChild(grandTotalElement);
+      }
+      grandTotalElement.textContent = `Computed Total Savings: $${grandTotalSavings.toFixed(2)}`;
+    }
+
   } catch (error) {
-    console.error('Savings Tracker: An unexpected error occurred.', error);
+    console.error('Harness Recommendations Tracker: An unexpected error occurred.', error);
     displayErrorOnPage(error.message);
   }
 }
 
-// Run the function when the page is loaded.
-window.addEventListener('load', calculateAndDisplayTotalSavings);
+// Debounce function to limit how often the calculation runs
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
 
-// Also run it when the content of the page might change dynamically.
-const observer = new MutationObserver(calculateAndDisplayTotalSavings);
+// Create a debounced version of our calculation function
+const debouncedCalculate = debounce(calculateAndDisplayTotalSavings, 500);
+
+// Run the debounced function when the page loads and when the DOM changes.
+window.addEventListener('load', debouncedCalculate);
+const observer = new MutationObserver(debouncedCalculate);
 observer.observe(document.body, { childList: true, subtree: true });
