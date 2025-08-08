@@ -17,11 +17,14 @@ function displayErrorOnPage(message) {
 }
 
 function calculateAndDisplayTotalSavings() {
+  // Disconnect the observer to prevent it from reacting to our own DOM changes.
+  observer.disconnect();
+
   try {
-    // Check if the key element with the text "Savings Realized" exists.
     const savingsRealizedElement = Array.from(document.querySelectorAll('p')).find(p => p.textContent.trim() === 'Savings Realized');
     if (!savingsRealizedElement) {
-      return; // If it doesn't exist, this isn't the right page. Stop.
+      // Not the right page, so we do nothing.
+      return;
     }
 
     const recommendationElements = document.querySelectorAll('.TableV2--row');
@@ -33,25 +36,22 @@ function calculateAndDisplayTotalSavings() {
 
     recommendationElements.forEach((element, index) => {
       const cells = element.querySelectorAll('div[role="cell"]');
-
       const savingsCell = cells.length > 1 ? cells[1] : null;
       const monthlySavingsElement = savingsCell ? savingsCell.querySelector('.StyledProps--font-variation-h5') : null;
-
       const dateCell = cells.length > 3 ? cells[3] : null;
       const appliedDateElement = dateCell ? dateCell.querySelector('p') : null;
 
       if (!monthlySavingsElement || !appliedDateElement) {
-        return; // Skip if we can't find the required elements
+        return;
       }
 
       const monthlySavingsText = monthlySavingsElement.textContent;
       const appliedDateText = appliedDateElement.textContent;
-
       const monthlySavings = parseFloat(monthlySavingsText.replace(/[^0-9.]/g, ''));
       const appliedDate = new Date(appliedDateText);
 
       if (isNaN(monthlySavings) || isNaN(appliedDate.getTime())) {
-        return; // Skip if data is not valid
+        return;
       }
 
       const today = new Date();
@@ -62,7 +62,6 @@ function calculateAndDisplayTotalSavings() {
 
       grandTotalSavings += totalSavings;
 
-      // Update individual row display
       let totalSavingsElement = savingsCell.querySelector('.total-savings-display');
       if (!totalSavingsElement) {
         totalSavingsElement = document.createElement('div');
@@ -74,7 +73,6 @@ function calculateAndDisplayTotalSavings() {
       totalSavingsElement.textContent = `Total Savings To Date: $${totalSavings.toFixed(2)}`;
     });
 
-    // Update the grand total in the impact card
     const impactCardContainer = document.querySelector('.ccmui_RecommendationCards-module_cardCtn_ptkiGu .Layout--vertical');
     if (impactCardContainer) {
       let grandTotalElement = impactCardContainer.querySelector('.custom-grand-total');
@@ -91,6 +89,9 @@ function calculateAndDisplayTotalSavings() {
   } catch (error) {
     console.error('Harness Recommendations Tracker: An unexpected error occurred.', error);
     displayErrorOnPage(error.message);
+  } finally {
+    // Always reconnect the observer to watch for future changes.
+    observer.observe(document.body, { childList: true, subtree: true });
   }
 }
 

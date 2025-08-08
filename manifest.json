@@ -6,7 +6,7 @@
   "permissions": ["activeTab", "scripting"],
   "content_scripts": [
     {
-      "matches": ["https://*.harness.io/ng/account/*/all/ce/recommendations"],
+      "matches": ["https://*.harness.io/ng/account/*/recommendations"],
       "js": ["content.js"]
     }
   ]
