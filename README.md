@@ -1,0 +1,15 @@
+# Savings Tracker Chrome Extension
+
+This Chrome extension calculates the total savings from monthly savings data found on the Harness Recommendations page and displays it.
+
+## How to Install
+
+1.  Open Chrome and navigate to `chrome://extensions`.
+2.  Enable "Developer mode" by clicking the toggle switch in the top right corner.
+3.  Click the "Load unpacked" button that appears.
+4.  Select the directory where you saved this extension's files (`savings-extension`).
+5.  The extension should now be installed and active!
+
+## How to Use
+
+Navigate to the Harness Recommendations page. The extension will automatically find these elements, calculate the total savings to date, and display them on the page.
